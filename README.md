@@ -1,4 +1,4 @@
-# Alfanumrik Cost-Optimized AI Learning OS
+# Alfanumrik Learning OS
 
 Alfanumrik is designed as an **AI operating system for learning**, not a single chatbot.
 The core strategy is strict cost discipline:
