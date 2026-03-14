@@ -1,80 +1,103 @@
-# Alfanumrik Mastery Update Engine (Deterministic v1)
+# Alfanumrik Mastery Update Engine (Rule-Based v1)
 
-This document defines deterministic update logic for the core learning unit:
+The core unit is **`student_id + concept_id`**.
 
-**`student_id + concept_id`**
+This engine updates:
+- mastery
+- confidence
+- retention
+- struggle
+- attempts/correct counts
+- evidence and streak counters
+- state labels
+- next review schedule
 
-The objective is stable, auditable mastery progression that improves retrieval precision and routing decisions.
+## 1) Deterministic state functions
 
-## 1) Inputs
+Implemented in `apps/api/app/mastery.py`:
+- `derive_state_label(...)`
+- `compute_next_review(...)`
+- component scorers:
+  - `score_correctness`
+  - `score_hints`
+  - `score_speed`
+  - `score_misconception`
+  - `score_confidence_alignment`
+  - `score_difficulty`
+  - `score_recency`
+- `learning_rate(...)`
+- `update_mastery(...)`
+- `apply_daily_decay(...)`
+- `apply_teacher_override(...)`
 
-For each attempt (or guided interaction), compute update signals from:
-- `outcome_score` (0-100)
-- `used_hint` (boolean)
-- `response_time_seconds`
-- `expected_time_seconds`
-- `error_severity` (0-10 scale)
-- optional `confidence_self_reported` (0-100)
+## 2) Update design
 
-Current state comes from `student_mastery`.
-
-## 2) Derived signals
-
-- `speed_score`: normalized from expected-vs-actual time
-- `mastery_signal`: outcome penalized for hint dependence and severe errors
-- `confidence_signal`: self-report (if present) else outcome+speed blend
-- `retention_signal`: weighted blend of outcome and confidence
-- `struggle_signal`: inverse mastery plus penalties
-
-## 3) Update formula
-
-Use EMA (exponential moving average):
+Per concept outcome, compute weighted deltas:
 
 ```text
-new_value = alpha * signal + (1 - alpha) * previous_value
+mastery_delta =
+  0.45 * correctness
++ 0.20 * difficulty
++ 0.15 * misconception
++ 0.10 * speed
++ 0.10 * recency
+
+confidence_delta =
+  0.35 * correctness
++ 0.25 * hints
++ 0.20 * speed
++ 0.20 * confidence_alignment
+
+retention_delta =
+  0.50 * recency
++ 0.30 * correctness
++ 0.20 * misconception
 ```
 
-Recommended alphas in v1:
-- mastery: `0.32`
-- confidence: `0.28`
-- retention: `0.18`
-- struggle: `0.30`
+Struggle uses a separate friction model and decays slowly after successful evidence.
 
-All values are clamped to `[0, 100]`.
+## 3) Learning-rate policy
 
-## 4) State label policy
+- New concepts: higher LR
+- Learning-zone concepts: medium LR
+- High-mastery concepts: lower LR
+- Formal tests amplify LR
+- Heavy-hint tutor flows reduce LR
 
-- `mastered`: mastery >= 80 and struggle <= 30
-- `learning`: mastery >= 60 and struggle <= 45
-- `struggling`: mastery < 40 or struggle >= 70
-- `needs_revision`: otherwise
+## 4) State labels (max 10)
 
-## 5) Next review scheduling
+- `unknown`
+- `introduced`
+- `learning`
+- `improving`
+- `functional`
+- `mastered`
+- `fragile_mastery`
+- `struggling`
+- `needs_revision`
+- `forgotten`
 
-Spaced-review schedule from current state:
-- 14 days: mastery >= 85 and struggle < 25
-- 7 days: mastery >= 70 and struggle < 40
-- 3 days: mastery >= 50
-- 1 day: otherwise
+## 5) Decay policy
 
-## 6) Why this works for MVP
+Decay after grace periods:
+- mastery < 50: no decay (already unstable)
+- mastery 50-79: grace 10 days
+- mastery >= 80: grace 14 days
 
-- deterministic and explainable
-- easy to tune by board/grade/cohort
-- robust against noisy one-off attempts
-- aligns with retrieval (same concept-linked unit)
+After grace:
+- retention: `-0.4/day`
+- confidence: `-0.2/day`
+- mastery: `-0.1/day` only if retention < 50
 
-## 7) Implementation in repository
+## 6) Teacher override policy
 
-The current deterministic engine lives in:
-- `apps/api/app/mastery.py`
+Bounded override events are supported:
+- `needs_revision`
+- `improved_with_support`
+- `suppress_over_penalization`
 
-With tests in:
-- `apps/api/tests/test_mastery.py`
+These are controlled nudges, not unrestricted score edits.
 
-This module returns:
-- updated mastery snapshot
-- `state_label`
-- `next_review_at`
+## 7) API contracts to stabilize
 
-for each concept-level attempt signal.
+Use a multi-concept input envelope (`concept_outcomes[]`) and concept-level updates in output. Keep this interface stable even if future ML weighting is introduced behind it.

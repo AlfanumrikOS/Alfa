@@ -15,6 +15,7 @@ def _request(task_type: TaskType) -> OrchestrationRequest:
         language="en",
         prior_mistakes=["sign flip"],
         user_prompt="Help me understand this concept",
+        learner_state={"mastery_score": 35, "retention_score": 30, "struggle_score": 68, "repeated_misconception": True},
     )
 
 

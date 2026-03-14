@@ -24,6 +24,7 @@ def build_context_payload(request: OrchestrationRequest) -> dict:
         "concept": request.concept,
         "student_level": request.student_level,
         "language": request.language,
+        "learner_state": request.learner_state,
         "prior_mistakes": request.prior_mistakes,
     }
 

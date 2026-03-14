@@ -1,5 +1,6 @@
 from dataclasses import asdict
 
+from app.retrieval_policy import choose_response_mode
 from app.schemas import (
     OrchestrationRequest,
     RetrievalAsset,
@@ -121,11 +122,11 @@ def build_context_packet(request: OrchestrationRequest) -> RetrievalPacket:
     ranked = rank_candidates(fetch_candidates(request, graph_context, filters))
     top_assets = ranked[:3]
 
-    response_mode = "simple_explanation_then_guided_question"
-    if request.task_type == TaskType.TUTOR_HINT:
-        response_mode = "one_hint_then_check_understanding"
-    elif request.task_type == TaskType.TEACHER_REPORT:
-        response_mode = "analytics_summary_with_intervention_actions"
+    response_mode = choose_response_mode(
+        task_type=request.task_type.value,
+        learner_state=request.learner_state,
+        prior_mistakes=request.prior_mistakes,
+    )
 
     assets = [
         RetrievalAsset(type=item.asset_type, id=item.asset_id, summary=item.summary)

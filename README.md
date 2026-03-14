@@ -23,6 +23,7 @@ Detailed architecture docs are in:
 - `architecture/retrieval-architecture.md`
 - `architecture/retrieval-learning-graph-learner-schema.sql`
 - `architecture/mastery-update-engine.md`
+- `architecture/retrieval-policy-engine.md`
 
 ## Repository layout
 

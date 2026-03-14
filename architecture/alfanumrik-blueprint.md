@@ -123,3 +123,4 @@ flowchart TD
 - Retrieval design and context-packet contract: `architecture/retrieval-architecture.md`
 - Mastery update formulas and scheduling policy: `architecture/mastery-update-engine.md`
 - Executable SQL schema for retrieval+graph+learner state: `architecture/retrieval-learning-graph-learner-schema.sql`
+- Retrieval policy decision rules by learner state: `architecture/retrieval-policy-engine.md`

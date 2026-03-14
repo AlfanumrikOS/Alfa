@@ -35,6 +35,7 @@ class OrchestrationRequest:
     student_level: str
     language: str
     user_prompt: str
+    learner_state: dict | None = None
     prior_mistakes: list[str] = field(default_factory=list)
 
 

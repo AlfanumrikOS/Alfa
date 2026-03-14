@@ -124,3 +124,9 @@ Current orchestration pipeline includes:
 - structured retrieval packet return in orchestration response
 
 See `apps/api/app/retrieval.py` and `apps/api/app/services.py`.
+
+
+## Retrieval policy integration
+
+The context builder delegates response-mode selection to a retrieval policy engine based on learner state (`mastery`, `retention`, `struggle`, misconception signals) and task type.
+Implementation: `apps/api/app/retrieval_policy.py`.

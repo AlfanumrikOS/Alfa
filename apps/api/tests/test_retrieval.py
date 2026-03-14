@@ -15,6 +15,7 @@ def _request(task_type: TaskType = TaskType.TUTOR_HINT) -> OrchestrationRequest:
         language="en_hi",
         prior_mistakes=["unit comparison confusion", "multi-step skip"],
         user_prompt="I don't understand ratio word problems",
+        learner_state={"mastery_score": 35, "retention_score": 30, "struggle_score": 68, "repeated_misconception": True},
     )
 
 
@@ -25,7 +26,7 @@ def test_retrieval_packet_is_structured_and_compact() -> None:
     assert packet.metadata_filters["board"] == "CBSE"
     assert packet.metadata_filters["language"] == "en_hi"
     assert 1 <= len(packet.retrieved_assets) <= 3
-    assert packet.recommended_response_mode == "one_hint_then_check_understanding"
+    assert packet.recommended_response_mode == "prerequisite_recap_then_bridge_example_then_guided_hint"
 
 
 def test_rank_candidates_orders_by_composite_score() -> None:
